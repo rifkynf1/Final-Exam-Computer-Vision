@@ -1,4 +1,4 @@
-# Computer Vision Final Exam 2025-2026
+# Computer Vision Final Exam
 
 **Name:** Rifky Nurfaishal  
 **ID:** 001202405012
