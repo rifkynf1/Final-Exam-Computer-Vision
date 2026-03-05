@@ -1,0 +1,7 @@
+path: E:/dataset/UAS_Computer_Vision/2_DATASET_YOLO
+train: images/train
+val: images/val
+
+names:
+  0: ps_controller_myunit
+  1: correction_tape_myunit

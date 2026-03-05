@@ -1,0 +1,13 @@
+# Project specific files to ignore
+CODE/yolo11n.pt
+MODEL/last.pt
+CODE/__pycache__/
+CODE/runs/
+.DS_Store
+*.pyc
+
+# Virtual Environment and temp files
+venv/
+env/
+.env
+.ipynb_checkpoints/

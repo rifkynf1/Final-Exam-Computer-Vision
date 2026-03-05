@@ -1,0 +1,4 @@
+ultralytics
+opencv-python
+scikit-learn
+pyyaml
