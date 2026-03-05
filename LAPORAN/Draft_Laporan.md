@@ -45,10 +45,10 @@ Example bounding boxes can be viewed in the [`../TRAINING_RESULTS/sample_bbox_qu
 | ---------- | -------------------- |
 | Model      | YOLO11n (yolo11n.pt) |
 | Image size | 640                  |
-| Epochs     | 50                   |
+| Epochs     | 150                  |
 | Batch size | 16                   |
 | Hardware   | CPU (i5-12400F)      |
-| Time taken | ~8 minutes           |
+| Time taken | ~24 minutes          |
 
 ---
 
@@ -58,19 +58,19 @@ Example bounding boxes can be viewed in the [`../TRAINING_RESULTS/sample_bbox_qu
 
 | Metric       | Value |
 | ------------ | ----- |
-| mAP@0.5      | 0.817 |
-| mAP@0.5:0.95 | 0.750 |
-| Precision    | 0.989 |
-| Recall       | 0.750 |
+| mAP@0.5      | 0.796 |
+| mAP@0.5:0.95 | 0.756 |
+| Precision    | 0.967 |
+| Recall       | 0.773 |
 
 ### Per-Class Metrics
 
 | Class           | Precision | Recall | mAP@0.5 | mAP@0.5:0.95 |
 | --------------- | --------- | ------ | ------- | ------------ |
-| ps_controller   | 0.994     | 1.000  | 0.995   | 0.995        |
-| correction_tape | 1.000     | 0.514  | 0.645   | 0.545        |
+| ps_controller   | 0.934     | 1.000  | 0.995   | 0.995        |
+| correction_tape | 1.000     | 0.547  | 0.597   | 0.518        |
 
-The PS controller performed nearly perfectly on the validation set, but the correction tape had a low recall of 0.514 (meaning almost half were missed). Interestingly, when I tested the model live with my webcam, the results were completely reversed—the PS controller struggled to be detected in real life. A detailed explanation of this issue is provided in Section 5.
+The PS controller performed nearly perfectly on the validation set, but the correction tape had a low recall of 0.547 (meaning almost half were missed). Interestingly, when I tested the model live with my webcam, the results were completely reversed—the PS controller struggled to be detected in real life. A detailed explanation of this issue is provided in Section 5.
 
 ---
 
@@ -91,28 +91,29 @@ Since the bounding boxes are now correct, the error stems from how the model lea
 
 **Conclusion:** Precise bounding boxes are necessary but not always sufficient when objects share visual characteristics (color/texture) with background elements not strongly represented as negative space in the training data.
 
-### Case 2: Low Recall for the Correction Tape
+### Case 2: Correction Tape Confused with Shirt and Other Backgrounds (False Positives)
 
-The recall for the correction tape was lower than the PS controller. This was likely due to:
+After extending the training to 150 epochs, the recall for the correction tape increased (meaning it successfully found more actual tapes). However, this came at a new cost: the model became overly eager to detect the correction tape, leading to **False Positives** where it began misidentifying clothing (like shirts) and other random objects in the room as the tape.
 
-- The object being relatively small within the frame.
-- A dataset of 92 images being too small to provide sufficient scaling and rotational variation.
-- Lighting conditions making it difficult to distinguish the highly reflective, mostly clear/white tape dispenser from light-colored backgrounds or glaring light sources.
+**Analysis of the Root Cause:**
+
+1. **The Trade-off of "High Recall":** In object detection, forcing a model to find every single instance of a difficult object (like a small, white/transparent tape dispenser) often causes it to lower its confidence threshold. It starts guessing that _any_ small light-colored blob or fold in a shirt is the tape.
+2. **Lack of Diverse Backgrounds:** The 92 images did not contain enough varied, cluttered backgrounds (without the tape in them) to teach the model what a "non-tape" looks like. It generalized too broadly based on color and basic shape.
 
 ### Case 3: Validation vs. Webcam Performance Gap
 
-On the validation set, the PS controller achieved near-perfect mAP. However, it still struggled in the live webcam test (specifically regarding the shirt issue). This happens because the validation images, despite being a separate split, still originated from the same collection sessions as the training data. They share the same distribution of lighting, angles, and backgrounds.
+On the validation set, the model achieved very high mAP. However, it still struggled immensely in the live webcam test (specifically regarding the False Positive issues mentioned above). This happens because the validation images, despite being a separate split, still originated from the same collection sessions as the training data. They share the exact same distribution of lighting, angles, and sterile desk backgrounds.
 
-When tested via webcam in a slightly different posture or lighting condition, the model's confidence drops or misfires on similar textures, showing that 92 images, even properly annotated, lack the generalization power needed for robust real-world deployment.
+When tested via webcam in a slightly different posture or a more "messy" real-world environment, the model's confidence misfires on similar textures, showing that 92 images—even properly annotated and trained for 150 epochs—lack the generalization power needed for robust real-world deployment.
 
-### Summary of Failure Modes
+### Summary of Failure Modes (Observed across 50 & 150 Epochs)
 
-| Issue                           | Impact                                                                      |
-| ------------------------------- | --------------------------------------------------------------------------- |
-| Texture & Color Ambiguity       | The model confuses dark, matte clothing with the dark, matte controller.    |
-| Insufficient Negative Examples  | The model doesn't know what a "shirt" looks like to explicitly ignore it.   |
-| Small dataset size (92 images)  | The model is highly prone to overfitting locally and failing to generalize. |
-| Lack of environmental variation | Noticeable performance drop in new conditions (webcam test).                |
+| Issue                          | Impact                                                                                                                |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Texture & Color Ambiguity      | (50 Epochs) PS Controller confused with dark shirt. <br> (150 Epochs) Correction Tape confused with clothes/objects.  |
+| The Precision/Recall Trade-off | Pushing the model to find all tapes (High Recall) resulted in guessing incorrectly (Low Precision in real-world use). |
+| Insufficient Negative Examples | The model doesn't know what "background" objects look like to explicitly ignore them.                                 |
+| Small dataset size (92 images) | The model is highly prone to overfitting locally and failing to generalize.                                           |
 
 **Conclusion:** Even with perfect annotations, a small dataset limits the model's ability to differentiate the target object from visually similar "distractor" objects in the real world. Validation metrics can be highly misleading if the validation set perfectly mirrors the training conditions.
 

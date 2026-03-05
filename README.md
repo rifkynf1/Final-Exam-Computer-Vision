@@ -44,7 +44,7 @@ Here are the locations of the required files for grading. I have linked the dire
 **Model Training:**
 
 - Base Model: YOLO11n (imgsz=640)
-- Epochs: 50
+- Epochs: 150
 - Hardware: CPU (i5-12400F)
 
 ---

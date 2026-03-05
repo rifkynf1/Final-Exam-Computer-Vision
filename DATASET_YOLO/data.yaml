@@ -1,4 +1,4 @@
-path: E:/dataset/UAS_Computer_Vision/2_DATASET_YOLO
+path: E:/dataset/UAS_Computer_Vision/DATASET_YOLO
 train: images/train
 val: images/val
 
